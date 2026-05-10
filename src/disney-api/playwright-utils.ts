@@ -193,7 +193,24 @@ export class PlaywrightManager {
         await this.page.waitForTimeout(1000);
       }
 
-      const dateLoc = this.page.locator(`[data-date="${date}"]`).first();
+      // Disney's `dpep-date-range-calendar` widget renders TWO elements with
+      // the same `data-date` for some days:
+      //   1. A real day cell:    <span class="date-day"  data-date="YYYY-MM-DD"> 26 </span>
+      //   2. A "phantom" marker: <div  class="old-day"   data-date="YYYY-MM-DD"></div>
+      // The phantom is a zero-sized placeholder used internally by the
+      // range-calendar component (likely a leftover from when this widget is
+      // configured as a hotel-style date range picker; see the `cell-0-0`
+      // and `not-in-month` classes). It comes BEFORE the real cell in DOM
+      // order, so `[data-date="..."].first()` picks the phantom — which has
+      // 0x0 dimensions and `aria-disabled="true"` on its <td> — making
+      // `isVisible()` return false and the loop pointlessly click "Next
+      // Month" past the actual target. Affects roughly the last week of
+      // every visible month.
+      //
+      // Targeting `span.date-day[data-date="..."]` selects only the real
+      // day cell. The phantom is a <div class="old-day">, so this is an
+      // unambiguous structural distinction.
+      const dateLoc = this.page.locator(`span.date-day[data-date="${date}"]`).first();
       let monthClicks = 0;
       while (!(await dateLoc.isVisible()) && monthClicks < 12) {
         const nextMonthBtn = this.page.locator('.collapsible-panel.date button[name="Next"][aria-label="Next Month"]').first();
