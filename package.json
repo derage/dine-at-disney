@@ -20,7 +20,6 @@
     "format": "prettier --config .prettierrc.js --write **/*.{js,ts,json}",
     "build": "npm run clean-build && npm run compile && npm run copy-templates",
     "postinstall": "playwright install chromium",
-    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "test": "jest",
     "watch": "jest --watch",
